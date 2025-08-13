@@ -1,0 +1,10 @@
+.sln
+bin
+.vscode
+obj
+build
+builds
+resources/scenes/*
+resources/meshs/*
+!resources/scenes/demo.scene
+!resources/meshs/cup.mesh
