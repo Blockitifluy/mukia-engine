@@ -81,7 +81,7 @@ public static class Program
                 return;
             }
 
-            using Tree tree = Tree.InitaliseTree();
+            using Tree tree = Tree.InitaliseTree(true);
 
             if (cmd == "demo")
             {

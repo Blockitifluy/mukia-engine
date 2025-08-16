@@ -13,17 +13,17 @@ Prerequisite: [DOTNET](https://dotnet.microsoft.com/en-us/download)
 
 ## Using Bash
 
-1. Download and extract the release
+1. Download and extract the release (NOTE: gzip decompressor needs to be manually [installed](https://www.7-zip.org/))
 2. Run the script
 
 ## Manually
 
-1. Download and extract the release
+1. Download and extract the release (NOTE: gzip decompressor needs to be manually [installed](https://www.7-zip.org/))
 2. Remove the `install.sh` as it's not needed
 3. Create a Project Directory
 4. Open the Terminal into your Project Directory and run `dotnet new console`
 5. Then, run `dotnet add package mukia-engine`
-6. Finally, copy all files in `install-assets` and copy the folders: `resources` and `shaders`
+6. Finally, move all files in `install-assets` and move the folders: `resources` and `shaders`
 
 # Scenes
 

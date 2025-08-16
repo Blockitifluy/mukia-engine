@@ -1,9 +1,8 @@
 #!/bin/bash
 
-version="0.3.2"
+version="0.3.3"
 
 installer_path="$(dirname $(realpath $0))"
-shader_path="$(realpath $root_path/shaders)"
 
 echo "Where to install"
 read install_path
@@ -35,8 +34,7 @@ fi
 rm Program.cs
 
 echo "Copying content"
-cp -a $installer_path/install-assets/. $install_path
-cp -a $shader_path $install_path
-
-cp -a $installer_path/resources/textures/null.png resources/textures/null.png 
-cp -a $installer_path/resources/textures/error_texture.png resources/textures/error_texture.png 
+cp -a $installer_path/install-assets/. .
+cp -a $installer_path/shaders .
+mkdir assets
+cp -a $installer_path/resources/textures resources/textures 
