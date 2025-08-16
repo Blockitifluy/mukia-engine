@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace MukiaEngine.NodeSystem;
 
 [Serializable]
@@ -10,11 +12,12 @@ public class TagException : Exception
 
 internal class Tag(uint id, string name, IEnumerable<Node> tagged)
 {
-    public uint ID = id;
-    public string Name = name;
-    public List<Node> Tagged = [.. tagged];
+    public uint ID { get; set; } = id;
+    public string Name { get; set; } = name;
+    public List<Node> Tagged { get; set; } = [.. tagged];
 }
 
+[SavableSingleton]
 /// <summary>
 /// Used to quickly query nodes.
 /// </summary>
@@ -165,5 +168,27 @@ public static class TagSystem
         }
 
         return r;
+    }
+
+    public static byte[] Save()
+    {
+        Tag[] tags = [.. NameToTag.Values];
+
+        byte[] b = JsonSerializer.SerializeToUtf8Bytes(tags);
+
+        return b;
+    }
+
+    public static void Load(byte[] b)
+    {
+        Tag[]? tags = JsonSerializer.Deserialize<Tag[]>(b);
+
+        ArgumentNullException.ThrowIfNull(tags, nameof(b));
+
+        TagIndex = (uint)tags.Length;
+        foreach (Tag tag in tags)
+        {
+            NameToTag.Add(tag.Name, tag);
+        }
     }
 }

@@ -10,8 +10,8 @@ public class CollisionGroupException : Exception
 
 internal struct CollisionGroup(string name = Physics.DefaultCollisionGroup, ulong collidesWith = ulong.MaxValue)
 {
-    public string Name = name;
-    public ulong CollidesWith = collidesWith;
+    public string Name { get; set; } = name;
+    public ulong CollidesWith { get; set; } = collidesWith;
 }
 
 public static partial class Physics
@@ -25,7 +25,7 @@ public static partial class Physics
     /// </summary>
     public const string DefaultCollisionGroup = "Default";
 
-    private static readonly CollisionGroup[] CollisionGroups = new CollisionGroup[MaxGroups];
+    private static CollisionGroup[] CollisionGroups = new CollisionGroup[MaxGroups];
     private static int CollisionGroupCount = 0;
 
     private static ref CollisionGroup GetCollisionGroup(string name, out int i)

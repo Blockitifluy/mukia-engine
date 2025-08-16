@@ -9,6 +9,14 @@ using System.Text.RegularExpressions;
 namespace MukiaEngine.NodeSystem;
 
 [Serializable]
+public class SavableSingletonException : Exception
+{
+    public SavableSingletonException() { }
+    public SavableSingletonException(string message) : base(message) { }
+    public SavableSingletonException(string message, Exception inner) : base(message, inner) { }
+}
+
+[Serializable]
 public class MalformedSceneException : Exception
 {
     public MalformedSceneException() { }
@@ -45,6 +53,12 @@ public class LoadingNodeException : Exception
     public LoadingNodeException() { }
     public LoadingNodeException(string message) : base(message) { }
     public LoadingNodeException(string message, System.Exception inner) : base(message, inner) { }
+}
+
+[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+public sealed class SavableSingletonAttribute : Attribute
+{
+    public SavableSingletonAttribute() { }
 }
 
 [Flags]
@@ -111,7 +125,10 @@ public static partial class SceneHandler
         }
     }
 
-    private static readonly FlagHandler[] FlagHandlers = [new ResourceFlagHandler(), new NodeRefFlagHandler()];
+    private static readonly FlagHandler[] FlagHandlers = [
+        new ResourceFlagHandler(),
+        new NodeRefFlagHandler()
+    ];
 
     [Flags]
     public enum PropertyFlag
@@ -142,7 +159,6 @@ public static partial class SceneHandler
     }
 
     #region Saving Scene
-    // TODO - Add SaveFlags
     private struct ExportNode
     {
         public Type NodeType;
@@ -253,6 +269,31 @@ public static partial class SceneHandler
         }
     }
 
+    private struct ExportSingleton(string name, byte[] b)
+    {
+        public string Name = name;
+        public byte[] Data = b;
+    }
+
+    private static List<ExportSingleton> SaveSingleton()
+    {
+        List<ExportSingleton> singles = [];
+        foreach (SavableSingleton singleton in Singletons)
+        {
+            byte[] b = singleton.Save();
+            string? name = singleton.Singleton.FullName;
+
+            if (name is null)
+            {
+                throw new NullReferenceException("Singleton has no name");
+            }
+
+            ExportSingleton export = new(name, b);
+            singles.Add(export);
+        }
+        return singles;
+    }
+
     private static void GetExportPropetries(List<ExportProp> b, Node node)
     {
         Type type = node.GetType();
@@ -314,7 +355,6 @@ public static partial class SceneHandler
 
                 if (!nodeToLocalID.TryGetValue(refNode, out uint id))
                 {
-                    // Console.WriteLine($"Propetry {prop.Name} depends on Node {refNode}, however it has not been saved.");
                     continue;
                 }
                 prop.Value = id.ToString();
@@ -345,18 +385,30 @@ public static partial class SceneHandler
         }
     }
 
-    private static MemoryStream ExportsToStream(List<ExportNode> exports, Dictionary<Node, uint> nodeToLocalID)
+    private static MemoryStream ExportsToStream(List<ExportNode> exports, List<ExportSingleton> singletons, Dictionary<Node, uint> nodeToLocalID)
     {
         MemoryStream stream = new();
+
+        foreach (ExportSingleton single in singletons)
+        {
+            string data = Convert.ToBase64String(single.Data),
+            val = $"$[{single.Name} {data}]\n";
+
+            byte[] b = Encoding.UTF8.GetBytes(val);
+
+            stream.Write(b);
+        }
+
         foreach (ExportNode export in exports)
         {
             Node node = export.Node;
 
             string exportText = export.Save(nodeToLocalID, export.ID);
-            byte[] bytes = Encoding.UTF8.GetBytes(exportText);
+            byte[] b = Encoding.UTF8.GetBytes(exportText);
 
-            stream.Write(bytes);
+            stream.Write(b);
         }
+
         return stream;
     }
 
@@ -377,33 +429,17 @@ public static partial class SceneHandler
         }
 
         var nodes = tree.GetAllNodes();
-
-        if (verbose)
-        {
-            Console.WriteLine("Sorting Nodes");
-        }
         nodes.Sort((x, y) => x.GetAncestors().Count - y.GetAncestors().Count);
 
-        if (verbose)
-        {
-            Console.WriteLine("Converting Nodes to Exports");
-        }
+        List<ExportSingleton> singletons = SaveSingleton();
+
         Dictionary<Node, uint> nodeToLocalID = [];
         List<ExportNode> exports = [];
         GetValidNodesForSaving(nodes, exports, nodeToLocalID);
-
-        if (verbose)
-        {
-            Console.WriteLine("Completing Node References");
-        }
         CompleteNodeRefrences(nodeToLocalID, exports);
 
-        using MemoryStream stream = ExportsToStream(exports, nodeToLocalID);
+        using MemoryStream stream = ExportsToStream(exports, singletons, nodeToLocalID);
 
-        if (verbose)
-        {
-            Console.WriteLine("Loading data in stream");
-        }
         stream.Position = 0L;
         using FileStream fileStream = new(path, FileMode.Create);
         stream.CopyTo(fileStream);
@@ -453,6 +489,17 @@ public static partial class SceneHandler
         }
 
         public ImportNode() { }
+    }
+
+    private struct ImportSingle(string name, string data)
+    {
+        public string Name = name;
+        public string Base64Data = data;
+
+        public byte[] Decode()
+        {
+            return Convert.FromBase64String(Base64Data);
+        }
     }
 
     #region Parsing
@@ -507,13 +554,24 @@ public static partial class SceneHandler
         return importProp;
     }
 
-    private static void ParseLine(List<ImportNode> importNodes, string line, uint i, SceneLoadingFlags flags)
+    private static ImportSingle ParseImportSingleton(Match singletonMatch)
+    {
+        var groups = singletonMatch.Groups;
+
+        string name = groups[1].Value,
+        data = groups[2].Value;
+
+        return new(name, data);
+    }
+
+    private static void ParseLine(List<ImportNode> importNodes, List<ImportSingle> importSingles, string line, uint i, SceneLoadingFlags flags)
     {
         bool verbose = flags.HasFlag(SceneLoadingFlags.Verbose);
 
         Match nodeMatch = RegexNode().Match(line),
             propMatch = RegexProp().Match(line),
-            commentMatch = RegexComment().Match(line);
+            commentMatch = RegexComment().Match(line),
+            singletonMatch = RegexSingleton().Match(line);
 
         if (nodeMatch.Success)
         {
@@ -535,21 +593,23 @@ public static partial class SceneHandler
         {
             return;
         }
+        else if (singletonMatch.Success)
+        {
+            ImportSingle single = ParseImportSingleton(singletonMatch);
+
+            importSingles.Add(single);
+        }
         else
         {
             throw new MalformedSceneException($"Line {i} is not a property or node!");
         }
     }
 
-    private static void ParseSceneFile(List<ImportNode> b, string path, SceneLoadingFlags flags)
+    private static void ParseSceneFile(List<ImportNode> b, List<ImportSingle> singles, string path, SceneLoadingFlags flags)
     {
         using StreamReader sceneStream = new(path);
 
         bool verbose = flags.HasFlag(SceneLoadingFlags.Verbose);
-        if (verbose)
-        {
-            Console.WriteLine($"Parsing Scene Stream from {path}");
-        }
 
         uint i = 0;
         while (sceneStream.Peek() >= 0)
@@ -564,7 +624,7 @@ public static partial class SceneHandler
 
             try
             {
-                ParseLine(b, line, i, flags);
+                ParseLine(b, singles, line, i, flags);
             }
             catch (Exception ex)
             {
@@ -615,12 +675,6 @@ public static partial class SceneHandler
 
     private static void LoadNodesFromImport(Dictionary<uint, Node> idToNode, List<ImportNode> importNodes, SceneLoadingFlags flags)
     {
-        bool verbose = flags.HasFlag(SceneLoadingFlags.Verbose);
-        if (verbose)
-        {
-            Console.WriteLine($"Loading {importNodes.Count} node(s)");
-        }
-
         foreach (ImportNode import in importNodes)
         {
             Type nodeType = NodeNameToType[import.NodeType];
@@ -663,11 +717,6 @@ public static partial class SceneHandler
 
     private static void LoadPropetriesForAllNodes(Dictionary<uint, Node> idToNode, List<ImportNode> importNodes, bool verbose)
     {
-        if (verbose)
-        {
-            Console.WriteLine("Loading Properties");
-        }
-
         int i = 0;
         try
         {
@@ -713,17 +762,32 @@ public static partial class SceneHandler
         try
         {
             List<ImportNode> importNodes = [];
-            ParseSceneFile(importNodes, path, flags);
+            List<ImportSingle> importSingles = [];
+            ParseSceneFile(importNodes, importSingles, path, flags);
 
             Dictionary<uint, Node> idToNode = [];
             LoadNodesFromImport(idToNode, importNodes, flags);
 
-            LoadPropetriesForAllNodes(idToNode, importNodes, verbose);
-
-            if (verbose)
+            foreach (ImportSingle singleton in importSingles)
             {
-                Console.WriteLine("Registering Nodes");
+                byte[] b = singleton.Decode();
+                Type? type = Type.GetType(singleton.Name);
+
+                if (type is null)
+                {
+                    throw new NullReferenceException($"No valid type for {singleton.Name}");
+                }
+
+                var singletonAtt = type.GetCustomAttribute<SavableSingletonAttribute>();
+                if (singletonAtt is null)
+                {
+                    throw new NullReferenceException($"No valid type for {singleton.Name}");
+                }
+
+                type.GetMethod("Load", BindingFlags.Public | BindingFlags.Static)?.Invoke(null, [b]);
             }
+
+            LoadPropetriesForAllNodes(idToNode, importNodes, verbose);
 
             foreach (Node node in idToNode.Values)
             {
@@ -762,51 +826,112 @@ public static partial class SceneHandler
         LoadScene(tree, path, SceneLoadingFlags.None);
     }
 
-    const string NodeRegex = @"^\[(.+?) local-id='(\d+?)' parent='(\d+?)'\]$";
-
+    private const string NodeRegex = @"^\[(.+?) local-id='(\d+?)' parent='(\d+?)'\]$";
     [GeneratedRegex(NodeRegex)]
     private static partial Regex RegexNode();
 
-    const string PropRegex = @"^\s*([\w\d.]+?)\s+(?:(r?n?)\s+)?([\w\d]+?)=(.+?)$";
-
+    private const string PropRegex = @"^\s*([\w\d.]+?)\s+(?:(r?n?)\s+)?([\w\d]+?)=(.+?)$";
     [GeneratedRegex(PropRegex)]
     private static partial Regex RegexProp();
 
-    const string CommentRegex = @"^\s*#.*$";
-
+    private const string CommentRegex = @"^\s*#.*$";
     [GeneratedRegex(CommentRegex)]
     private static partial Regex RegexComment();
+
+    private const string SingletonRegex = @"^\s*\$\[\s*([\w.]+)\s+([\d\w=\\+]*)\]$";
+    [GeneratedRegex(SingletonRegex)]
+    private static partial Regex RegexSingleton();
     #endregion
 
+    private struct SavableSingleton
+    {
+        public Type Singleton;
+
+        private MethodInfo SaveFunc;
+        private MethodInfo LoadFunc;
+
+        public byte[] Save()
+        {
+            byte[]? b = SaveFunc.Invoke(null, null) as byte[];
+
+            if (b is null)
+            {
+                throw new NullReferenceException($"Couldn't save singleton in {Singleton.Name}");
+            }
+
+            return b;
+        }
+
+        public void Load(byte[] b)
+        {
+            LoadFunc.Invoke(null, [b]);
+        }
+
+        public SavableSingleton(Type singleton)
+        {
+            Singleton = singleton;
+
+            MethodInfo? saveFunc = singleton.GetMethod("Save", BindingFlags.Static | BindingFlags.Public),
+            loadFunc = singleton.GetMethod("Load", BindingFlags.Static | BindingFlags.Public);
+
+            if (saveFunc is null || loadFunc is null)
+            {
+                throw new SavableSingletonException($"No Save and Load static functions found in {singleton.FullName}");
+            }
+
+            SaveFunc = saveFunc;
+            LoadFunc = loadFunc;
+        }
+    }
+
     private static readonly Dictionary<string, Type> NodeNameToType = [];
+    private static readonly List<SavableSingleton> Singletons = [];
 
     private static readonly JsonSerializerOptions JSONOptions = new()
     {
         NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
     };
 
+    private static void LoadNodeName(Type type)
+    {
+        var saveNode = type.GetCustomAttribute<SaveNodeAttribute>();
+        Type baseNodeType = typeof(Node);
+
+        if (saveNode is null)
+        {
+            return;
+        }
+
+        if (!type.IsSubclassOf(baseNodeType) && type != baseNodeType)
+        {
+            Console.WriteLine($"{type.FullName} doesn't inherit from Node but has the SaveNode Attribute");
+            return;
+        }
+
+        NodeNameToType.Add(saveNode.SavedName, type);
+    }
+
+    private static void LoadSingleton(Type type)
+    {
+        var singletonAtt = type.GetCustomAttribute<SavableSingletonAttribute>();
+
+        if (singletonAtt is null)
+        {
+            return;
+        }
+
+        SavableSingleton singleton = new(type);
+        Singletons.Add(singleton);
+    }
+
     static SceneHandler()
     {
         Assembly assem = typeof(SceneHandler).Assembly;
 
-        Type baseNodeType = typeof(Node);
-
         foreach (Type type in assem.GetTypes())
         {
-            var saveNode = type.GetCustomAttribute<SaveNodeAttribute>();
-
-            if (saveNode is null)
-            {
-                continue;
-            }
-
-            if (!type.IsSubclassOf(baseNodeType) && type != baseNodeType)
-            {
-                Console.WriteLine($"{type.FullName} doesn't inherit from Node but has the SaveNode Attribute");
-                continue;
-            }
-
-            NodeNameToType.Add(saveNode.SavedName, type);
+            LoadNodeName(type);
+            LoadSingleton(type);
         }
     }
 }

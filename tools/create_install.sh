@@ -9,11 +9,11 @@ tools_path="$(realpath $(dirname $0))"
 project_path="$(dirname $tools_path)"
 echo $project_path
 echo $tools_path
-[ ! -d temp ] && mkdir temp
-[ -d temp/$install_name ] && exit 1 || mkdir temp/$install_name
+[ ! -d .temp ] && mkdir .temp
+[ -d .temp/$install_name ] && exit 1 || mkdir .temp/$install_name
 
 CreateInstall() {
-  cd temp/$install_name
+  cd .temp/$install_name
 
   cp $tools_path/install.sh install.sh
   cp -a $tools_path/install-assets .
@@ -31,4 +31,4 @@ fi
 
 cd $root_path
 echo "$(pwd)"
-rm -r temp/$install_name
+rm -r .temp/$install_name

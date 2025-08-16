@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using MukiaEngine.NodeSystem;
 
 namespace MukiaEngine.Physics;
@@ -28,6 +30,7 @@ public interface ICollisionFilter
     public string CollisionGroup { get; set; }
 }
 
+[SavableSingleton]
 /// <summary>
 /// Contains miscellaneous methods about physics and collision.
 /// </summary>
@@ -135,5 +138,28 @@ public static partial class Physics
         }
 
         return filter.FilterType == CollisionFilter.Exclude;
+    }
+
+    private struct PhysicsSaveData(int count, CollisionGroup[] groups)
+    {
+        public int Count { get; set; } = count;
+        public CollisionGroup[] CollisionGroups { get; set; } = groups;
+    }
+
+    public static byte[] Save()
+    {
+        PhysicsSaveData saveData = new(CollisionGroupCount, CollisionGroups);
+
+        byte[] b = JsonSerializer.SerializeToUtf8Bytes(saveData);
+
+        return b;
+    }
+
+    public static void Load(byte[] b)
+    {
+        PhysicsSaveData saveData = JsonSerializer.Deserialize<PhysicsSaveData>(b);
+
+        CollisionGroupCount = saveData.Count;
+        CollisionGroups = saveData.CollisionGroups;
     }
 }
