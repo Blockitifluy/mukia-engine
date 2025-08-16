@@ -55,6 +55,12 @@ public class LoadingNodeException : Exception
     public LoadingNodeException(string message, System.Exception inner) : base(message, inner) { }
 }
 
+/// <summary>
+/// Allows static classes to be saved in side a scene.
+/// </summary>
+/// <remarks>
+/// Needs the <c>byte[] Save()</c> and <c>void Load(byte[] b)</c> static methods.
+/// </remarks>
 [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public sealed class SavableSingletonAttribute : Attribute
 {
@@ -66,6 +72,7 @@ public enum SceneLoadingFlags : ulong
 {
     None = 0,
     Verbose = 1 << 1,
+    NoSingletons = 1 << 2
 }
 
 [Flags]
@@ -73,6 +80,7 @@ public enum SceneSavingFlags : ulong
 {
     None = 0,
     Verbose = 1 << 1,
+    NoSingletons = 1 << 2
 }
 
 public static partial class SceneHandler
@@ -275,8 +283,14 @@ public static partial class SceneHandler
         public byte[] Data = b;
     }
 
-    private static List<ExportSingleton> SaveSingleton()
+    private static List<ExportSingleton> SaveSingleton(SceneSavingFlags flags)
     {
+        bool noSingles = flags.HasFlag(SceneSavingFlags.NoSingletons);
+        if (noSingles)
+        {
+            return [];
+        }
+
         List<ExportSingleton> singles = [];
         foreach (SavableSingleton singleton in Singletons)
         {
@@ -431,7 +445,7 @@ public static partial class SceneHandler
         var nodes = tree.GetAllNodes();
         nodes.Sort((x, y) => x.GetAncestors().Count - y.GetAncestors().Count);
 
-        List<ExportSingleton> singletons = SaveSingleton();
+        List<ExportSingleton> singletons = SaveSingleton(flags);
 
         Dictionary<Node, uint> nodeToLocalID = [];
         List<ExportNode> exports = [];
@@ -566,7 +580,8 @@ public static partial class SceneHandler
 
     private static void ParseLine(List<ImportNode> importNodes, List<ImportSingle> importSingles, string line, uint i, SceneLoadingFlags flags)
     {
-        bool verbose = flags.HasFlag(SceneLoadingFlags.Verbose);
+        bool verbose = flags.HasFlag(SceneLoadingFlags.Verbose),
+        noSingles = flags.HasFlag(SceneLoadingFlags.NoSingletons);
 
         Match nodeMatch = RegexNode().Match(line),
             propMatch = RegexProp().Match(line),
@@ -595,6 +610,11 @@ public static partial class SceneHandler
         }
         else if (singletonMatch.Success)
         {
+            if (noSingles)
+            {
+                return;
+            }
+
             ImportSingle single = ParseImportSingleton(singletonMatch);
 
             importSingles.Add(single);

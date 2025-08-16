@@ -14,6 +14,8 @@ public static class Program
         public bool Verbose { get; set; }
         [Option('s', "save-on-quit", Required = false, HelpText = "Save the scene when quiting")]
         public string? SaveOnQuit { get; set; }
+        [Option("no-singletons", Required = false, HelpText = "Load and save no singletons")]
+        public bool NoSingletons { get; set; }
     }
 
     public static Window? GameWindow { get; set; }
@@ -96,6 +98,10 @@ public static class Program
                 {
                     flags |= SceneLoadingFlags.Verbose;
                 }
+                if (o.NoSingletons)
+                {
+                    flags |= SceneLoadingFlags.NoSingletons;
+                }
 
                 SceneHandler.LoadScene(tree, path, flags);
             }
@@ -108,6 +114,10 @@ public static class Program
                 if (o.Verbose)
                 {
                     flags |= SceneSavingFlags.Verbose;
+                }
+                if (o.NoSingletons)
+                {
+                    flags |= SceneSavingFlags.NoSingletons;
                 }
 
                 SceneHandler.SaveScene(Tree.GetCurrentTree(), o.SaveOnQuit, flags);
