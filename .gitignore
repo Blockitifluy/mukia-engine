@@ -4,6 +4,8 @@ bin
 obj
 build
 builds
+temp
+releases
 resources/scenes/*
 resources/meshs/*
 !resources/scenes/demo.scene

@@ -17,30 +17,39 @@ public sealed class Tree : IDisposable
     /// </summary>
     /// <returns>The current tree</returns>
     /// <exception cref="TreeException">Fired when the Tree has not been initised.</exception>
-    public static Tree GetTree()
+    public static Tree GetCurrentTree()
     {
         if (CurrentTree is not null)
         {
             return CurrentTree;
         }
 
-        throw new TreeException("Tree doesn't exist");
+        throw new TreeException("Current tree doesn't exist");
+    }
+
+    /// <summary>
+    /// Switches the CurrentTree.
+    /// </summary>
+    /// <param name="tree">The new tree</param>
+    public static void SwitchTree(Tree tree)
+    {
+        CurrentTree = tree;
     }
 
     /// <summary>
     /// Creates a new Tree.
     /// </summary>
     /// <returns>The tree just created.</returns>
-    /// <exception cref="TreeException">Fired when Tree already exists.</exception>
-    public static Tree InitaliseTree()
+    public static Tree InitaliseTree(bool isDefault = false)
     {
-        if (CurrentTree is not null)
+        Tree tree = new();
+
+        if (isDefault)
         {
-            throw new TreeException("Tree already exists");
+            CurrentTree = tree;
         }
 
-        CurrentTree = new();
-        return CurrentTree;
+        return tree;
     }
 
     private readonly List<Node> Nodes = [];
@@ -54,6 +63,7 @@ public sealed class Tree : IDisposable
         return [.. Nodes];
     }
 
+    #region Register
     /// <summary>
     /// Is this node registered.
     /// </summary>
@@ -98,7 +108,9 @@ public sealed class Tree : IDisposable
         }
         Nodes.Remove(node);
     }
+    #endregion
 
+    #region Update
     /// <summary>
     /// Updates all nodes' <see cref="Node.Update(double)"/>.
     /// </summary>
@@ -161,6 +173,7 @@ public sealed class Tree : IDisposable
     }
 
     private readonly Timer FixedUpdateTimer;
+    #endregion
 
     void IDisposable.Dispose()
     {

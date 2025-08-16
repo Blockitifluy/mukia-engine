@@ -161,7 +161,7 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 		Input.KeyboardState = KeyboardState;
 		Input.MouseState = MouseState;
 
-		Tree.GetTree().UpdateAllNodes(e.Time);
+		Tree.GetCurrentTree().UpdateAllNodes(e.Time);
 	}
 
 	protected override void OnKeyDown(KeyboardKeyEventArgs e)

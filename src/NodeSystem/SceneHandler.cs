@@ -327,7 +327,6 @@ public static partial class SceneHandler
         uint i = 0;
         foreach (Node node in nodes)
         {
-            i++;
             var saveNode = node.GetType().GetCustomAttribute<SaveNodeAttribute>(false);
             if (saveNode is null)
             {
@@ -342,6 +341,7 @@ public static partial class SceneHandler
             ExportNode exportNode = new(node, i);
             b.Add(exportNode);
             nodeToLocalID.Add(node, i);
+            i++;
         }
     }
 

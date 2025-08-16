@@ -81,7 +81,7 @@ public static class Program
                 return;
             }
 
-            Tree tree = Tree.InitaliseTree();
+            using Tree tree = Tree.InitaliseTree();
 
             if (cmd == "demo")
             {
@@ -110,7 +110,7 @@ public static class Program
                     flags |= SceneSavingFlags.Verbose;
                 }
 
-                SceneHandler.SaveScene(Tree.GetTree(), o.SaveOnQuit, flags);
+                SceneHandler.SaveScene(Tree.GetCurrentTree(), o.SaveOnQuit, flags);
             }
         });
     }

@@ -7,6 +7,24 @@ An open-source Game Engine
 
 </div>
 
+# Use the Project
+
+Prerequisite: [DOTNET](https://dotnet.microsoft.com/en-us/download)
+
+## Using Bash
+
+1. Download and extract the release
+2. Run the script
+
+## Manually
+
+1. Download and extract the release
+2. Remove the `install.sh` as it's not needed
+3. Create a Project Directory
+4. Open the Terminal into your Project Directory and run `dotnet new console`
+5. Then, run `dotnet add package mukia-engine`
+6. Finally, copy all files in `install-assets` and copy the folders: `resources` and `shaders`
+
 # Scenes
 
 ## Loading Demo Scene
@@ -22,12 +40,12 @@ When getting an error check:
 3. Forgot to add the `SaveNode` attribute, or uses the wrong name
 4. Make an issue on the github project
 
-## Build Project
+## Publish Game
 
-To build the C# use:
+To publish your code use:
 
-```CMD
-./make-build <path-to-destination>
+```cmd
+dotnet publish --output <output> -r <os> --self-contained
 ```
 
 ## Loading Scenes

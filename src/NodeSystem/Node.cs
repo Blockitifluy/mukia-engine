@@ -79,7 +79,7 @@ public class Node
     /// <returns>The main tree</returns>
     public static Tree GetTree()
     {
-        return Tree.GetTree();
+        return Tree.GetCurrentTree();
     }
 
     public override string ToString()

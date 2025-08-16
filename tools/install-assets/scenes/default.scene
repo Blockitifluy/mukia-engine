@@ -1,0 +1,17 @@
+[engine.hovering-camera local-id='0' parent='0']
+	System.Single CameraSpeed=1.5
+	System.Single Sensitivity=0.005
+	MukiaEngine.Vector3 Position={"X":0,"Y":0,"Z":0}
+	MukiaEngine.Vector3 Rotation={"X":0,"Y":0,"Z":0}
+	MukiaEngine.Vector3 Scale={"X":1,"Y":1,"Z":1}
+	System.String Name="HoveringCamera"
+	System.Boolean Enabled=true
+[engine.mesh-container local-id='1' parent='0']
+	MukiaEngine.Mesh Mesh={"Vertices":[{"X":-1,"Y":-1,"Z":1},{"X":1,"Y":-1,"Z":1},{"X":-1,"Y":1,"Z":1},{"X":1,"Y":1,"Z":1},{"X":-1,"Y":-1,"Z":-1},{"X":1,"Y":-1,"Z":-1},{"X":-1,"Y":1,"Z":-1},{"X":1,"Y":1,"Z":-1}],"Indices":[2,6,7,2,3,7,0,4,5,0,1,5,0,2,6,0,4,6,1,3,7,1,5,7,0,2,3,0,1,3,4,6,7,4,5,7],"UVs":[{"X":0,"Y":0},{"X":1,"Y":0},{"X":0,"Y":1},{"X":1,"Y":1},{"X":1,"Y":0},{"X":0,"Y":0},{"X":1,"Y":1},{"X":0,"Y":1}],"PrimitiveType":4}
+	System.String Texture0=""
+	System.String Texture1=""
+	MukiaEngine.Vector3 Position={"X":0,"Y":0,"Z":0}
+	MukiaEngine.Vector3 Rotation={"X":0,"Y":0,"Z":0}
+	MukiaEngine.Vector3 Scale={"X":1,"Y":1,"Z":1}
+	System.String Name="test-cube"
+	System.Boolean Enabled=true

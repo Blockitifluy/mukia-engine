@@ -3,11 +3,32 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <RootNamespace>Mukia</RootNamespace>
+    <RootNamespace>MukiaEngine</RootNamespace>
     <AssemblyName>Mukia</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <PackageId>mukia-engine</PackageId>
+
+    <RepositoryUrl>https://github.com/Blockitifluy/ZombieSurvival</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <Version>0.3.2</Version>
+    <Authors>Blockitifluy</Authors>
+    <Company>Blockitifluy</Company>
+    <Product>Mukia Engine</Product>
+    <Title>Mukia Engine</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="docs/export-mesh-example.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <PropertyGroup>
     <BeautySharedRuntimeMode>False</BeautySharedRuntimeMode>
@@ -46,6 +67,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tools/install-assets/Entry.cs" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="nulastudio.NetBeauty" Version="2.1.5" />
     <PackageReference Include="OpenTK" Version="4.9.4" />
