@@ -2,7 +2,7 @@
 
 version="0.3.3"
 
-installer_path="$(dirname $(realpath $0))"
+installer_path="$(pwd)"
 
 echo "Where to install"
 read install_path
@@ -14,8 +14,8 @@ fi
 
 echo "Installing into $install_path"
 
-mkdir $install_path
-cd $install_path
+mkdir "$install_path"
+cd "$install_path"
 mkdir resources
 mkdir resources/textures
 
@@ -34,7 +34,8 @@ fi
 rm Program.cs
 
 echo "Copying content"
-cp -a $installer_path/install-assets/. .
+cp -a $installer_path/tools/install-assets/* .
 cp -a $installer_path/shaders .
+
 mkdir assets
-cp -a $installer_path/resources/textures resources/textures 
+cp -a $installer_path/resources/textures resources

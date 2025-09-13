@@ -41,7 +41,6 @@ public class Node3D : Node
         set
         {
             _Rotation = value;
-            UpdateVectors();
             UpdateTransformations();
             OnNonPositionUpdate();
         }
@@ -135,7 +134,6 @@ public class Node3D : Node
         base.Start();
 
         UpdateTransformations();
-        UpdateVectors();
     }
 
     private void UpdateTransformationsToChildren()
@@ -188,6 +186,7 @@ public class Node3D : Node
         );
 
         UpdateTransformationsToChildren();
+        UpdateVectors();
     }
 
     /// <summary>
@@ -195,8 +194,8 @@ public class Node3D : Node
     /// </summary>
     private void UpdateVectors()
     {
-        float pitch = Rotation.Y,
-        yaw = Rotation.X;
+        float pitch = GlobalRotation.Y,
+        yaw = GlobalRotation.X;
 
         // First, the front matrix is calculated using some basic trigonometry.
         _Front.X = float.Cos(pitch) * float.Cos(yaw);

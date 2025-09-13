@@ -24,9 +24,13 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 	{
 		base.OnLoad();
 
-		ArgumentNullException.ThrowIfNull(CurrentCamera, nameof(CurrentCamera));
+		if (CurrentCamera is null)
+		{
+			return;
+		}
 
-		GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		Color skyColor = CurrentCamera.SkyColor;
+		GL.ClearColor(skyColor.R, skyColor.G, skyColor.B, 1.0f);
 
 		GL.Enable(EnableCap.DepthTest);
 
@@ -54,8 +58,6 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 		Shader.SetInt("texture0", 0);
 		Shader.SetInt("texture1", 1);
 
-
-		CurrentCamera.Position = Vector3.Forward * 3;
 		CurrentCamera.AspectRatio = Size.X / (float)Size.Y;
 
 		CursorState = CursorState.Grabbed;
@@ -89,7 +91,10 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 	{
 		base.OnRenderFrame(e);
 
-		ArgumentNullException.ThrowIfNull(CurrentCamera, nameof(CurrentCamera));
+		if (CurrentCamera is null)
+		{
+			return;
+		}
 
 		GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
@@ -178,22 +183,16 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 		Input.SendKeyUp(this, e);
 	}
 
-	protected override void OnMouseWheel(MouseWheelEventArgs e)
-	{
-		base.OnMouseWheel(e);
-
-		ArgumentNullException.ThrowIfNull(CurrentCamera, nameof(CurrentCamera));
-
-		CurrentCamera.Fov -= e.OffsetY;
-	}
-
 	protected override void OnResize(ResizeEventArgs e)
 	{
 		base.OnResize(e);
 
-		ArgumentNullException.ThrowIfNull(CurrentCamera, nameof(CurrentCamera));
-
 		GL.Viewport(0, 0, Size.X, Size.Y);
+
+		if (CurrentCamera is null)
+		{
+			return;
+		}
 
 		CurrentCamera.AspectRatio = Size.X / (float)Size.Y;
 	}

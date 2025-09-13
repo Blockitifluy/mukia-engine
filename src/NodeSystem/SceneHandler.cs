@@ -369,6 +369,7 @@ public static partial class SceneHandler
 
                 if (!nodeToLocalID.TryGetValue(refNode, out uint id))
                 {
+                    prop.Value = int.MaxValue.ToString();
                     continue;
                 }
                 prop.Value = id.ToString();

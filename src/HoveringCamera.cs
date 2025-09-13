@@ -9,7 +9,7 @@ namespace MukiaEngine;
 public class HoveringCamera : Node3D
 {
     [AllowNull]
-    public Camera Camera;
+    public Camera Camera { get; set; }
 
     [Export]
     public float CameraSpeed { get; set; } = 1.5f;
@@ -24,14 +24,14 @@ public class HoveringCamera : Node3D
         float fDelta = delta,
         time = fDelta * 4;
 
-        Vector3 xMovement = Camera.Right * Input.InputAxis(Keys.A, Keys.D)
+        Vector3 xMovement = Right * Input.InputAxis(Keys.A, Keys.D)
         * CameraSpeed * time;
-        Vector3 yMovement = Camera.Up * Input.InputAxis(Keys.LeftShift, Keys.Space)
+        Vector3 yMovement = Up * Input.InputAxis(Keys.LeftShift, Keys.Space)
         * CameraSpeed * time;
-        Vector3 zMovement = Camera.Front * Input.InputAxis(Keys.S, Keys.W)
+        Vector3 zMovement = Front * Input.InputAxis(Keys.S, Keys.W)
         * CameraSpeed * time;
 
-        Camera.Position += xMovement + yMovement + zMovement;
+        Position += xMovement + yMovement + zMovement;
 
         // Get the mouse state
         var mouse = Input.MouseState;
@@ -48,7 +48,7 @@ public class HoveringCamera : Node3D
             var deltaY = mouse.Y - LastPos.Y;
             LastPos = new Vector2(mouse.X, mouse.Y);
 
-            Camera.Rotation += new Vector3(deltaX * Sensitivity, deltaY * Sensitivity, 0);
+            Rotation += new Vector3(deltaX * Sensitivity, deltaY * Sensitivity, 0);
         }
     }
 
@@ -66,7 +66,7 @@ public class HoveringCamera : Node3D
 
     private void ShootRay()
     {
-        Ray ray = new(Camera.GlobalPosition, Camera.Front * 20)
+        Ray ray = new(GlobalPosition, Front * 20)
         {
             FilterList = [this]
         };
@@ -84,7 +84,7 @@ public class HoveringCamera : Node3D
     {
         base.Awake();
 
-        Camera = New<Camera>(null, "PlayerCamera");
+        Camera = New<Camera>(this, "PlayerCamera");
         Camera.IsCurrentCamera = true;
         Camera.Archivable = false;
     }

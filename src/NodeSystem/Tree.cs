@@ -115,7 +115,7 @@ public sealed class Tree : IDisposable
     /// Updates all nodes' <see cref="Node.Update(double)"/>.
     /// </summary>
     /// <param name="delta"><inheritdoc cref="Node.Update(double)" path="/param[@name='delta']"/></param>
-    public void UpdateAllNodes(double delta)
+    internal void UpdateAllNodes(double delta)
     {
         var nodes = GetAllNodes();
 
@@ -150,7 +150,7 @@ public sealed class Tree : IDisposable
     /// <summary>
     /// Updates all nodes' <see cref="Node.UpdateFixed"/>.
     /// </summary>
-    public void UpdateAllNodesFixed(object? state)
+    internal void UpdateAllNodesFixed(object? state)
     {
         var nodes = GetAllNodes();
 

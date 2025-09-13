@@ -14,6 +14,7 @@ public sealed class Camera : Node3D
     /// </summary>
     public static Camera? CurrentCamera { get; set; } = null;
 
+    [Export]
     /// <summary>
     /// Is this camera is used for rendering
     /// </summary>
@@ -36,6 +37,10 @@ public sealed class Camera : Node3D
         }
     }
 
+    [Export]
+    public Color SkyColor { get; set; } = new(0.2f, 0.3f, 0.3f);
+
+    [Export]
     /// <summary> 
     /// Field of View
     /// </summary>
@@ -44,14 +49,14 @@ public sealed class Camera : Node3D
         get => _Fov;
         set
         {
-            var angle = MathHelper.Clamp(value, 1f, 90f);
+            var angle = float.Clamp(value, 1f, 90f);
             _Fov = angle;
         }
     }
 
     public Matrix4 GetViewMatrix()
     {
-        return Matrix4.LookAt((GLVector3)Position, (GLVector3)(Position + Front), (GLVector3)Up);
+        return Matrix4.LookAt((GLVector3)GlobalPosition, (GLVector3)(GlobalPosition + Front), (GLVector3)Up);
     }
 
     public Matrix4 GetProjectionMatrix()
