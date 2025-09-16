@@ -73,6 +73,7 @@ public static class Program
 
     public static void Main(string[] args)
     {
+#if !DEBUG
         Parser.Default.ParseArguments<CLIOptions>(args)
         .WithParsed<CLIOptions>(o =>
         {
@@ -123,5 +124,10 @@ public static class Program
                 SceneHandler.SaveScene(Tree.GetCurrentTree(), o.SaveOnQuit, flags);
             }
         });
+#else
+        using Tree tree = Tree.InitaliseTree(true);
+        CreateTestScene();
+        RunWindow();
+#endif
     }
 }

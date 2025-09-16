@@ -1,6 +1,7 @@
 .sln
 bin
 .vscode
+.temp
 obj
 build
 builds

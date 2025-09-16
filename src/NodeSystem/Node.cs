@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MukiaEngine.NodeSystem;
 
 namespace MukiaEngine;
@@ -17,7 +18,6 @@ public sealed class SaveNodeAttribute(string savedName) : Attribute
 [SaveNode("engine.node")]
 public class Node
 {
-    private Node? _Parent;
     /// <summary>
     /// The hierarchal parent of the Node.
     /// </summary>
@@ -26,28 +26,19 @@ public class Node
     /// </remarks>
     public Node? Parent
     {
-        get => _Parent;
+        get => NodeIndex?.Parent;
         set
         {
-            if (value == this)
-            {
-                throw new TreeException($"Can not parent to self");
-            }
-
-            if (value is not null)
-            {
-                bool isDescendant = IsDescendant(value),
-                isAncestor = IsAncestor(value);
-                if (isDescendant || isAncestor)
-                {
-                    throw new TreeException($"Circular Heiarchry attemped on {this}");
-                }
-            }
+            TreeIndexer.ThrowIfInvalidParent(this, value);
 
             OnParent(value);
-            _Parent = value;
+            NodeIndex.Parent = value;
+
+            TreeIndexer indexer = GetTreeIndexer();
+            indexer.UpdateIndex(NodeIndex);
         }
     }
+
     /// <summary>
     /// The un-unique identifier of the Node. 
     /// </summary>
@@ -82,6 +73,11 @@ public class Node
         return Tree.GetCurrentTree();
     }
 
+    private static TreeIndexer GetTreeIndexer()
+    {
+        return GetTree().Indexer;
+    }
+
     public override string ToString()
     {
         return $"{GetType().Name} {Name}";
@@ -94,9 +90,15 @@ public class Node
     {
         Tree tree = GetTree();
 
+        if (Parent is not null)
+        {
+            GetTreeIndexer().UpdateIndex(Parent.NodeIndex);
+        }
+
         var desendents = GetDescendant();
         foreach (Node node in desendents)
         {
+            node.OnDestroy();
             node.Parent = null;
             tree.UnregisterNode(node);
         }
@@ -134,6 +136,11 @@ public class Node
     #endregion
 
     #region Hierarchary
+
+    public NodeIndex NodeIndex => _NodeIndex;
+    [AllowNull]
+    public NodeIndex _NodeIndex;
+
     /// <summary>
     /// Finds the first child that has the matching <paramref name="name"/> and is an approprate type.
     /// </summary>
@@ -142,7 +149,7 @@ public class Node
     /// <returns>The node with the matching <paramref name="name"/> and type.</returns>
     public TNode? FindFirstChild<TNode>(string name) where TNode : Node
     {
-        foreach (Node node in GetChildren())
+        foreach (Node node in NodeIndex.Children)
         {
             bool nameMatch = node.Name == name;
             if (nameMatch && node is TNode tNode)
@@ -150,6 +157,7 @@ public class Node
                 return tNode;
             }
         }
+
         return null;
     }
 
@@ -157,7 +165,7 @@ public class Node
     /// <param name="type"><inheritdoc cref="FindFirstChild{TNode}(string)"/></param>
     public Node? FindFirstChild(string name, Type type)
     {
-        foreach (Node node in GetChildren())
+        foreach (Node node in NodeIndex.Children)
         {
             bool nameMatch = node.Name == name;
             if (nameMatch && node.GetType().IsAssignableTo(type))
@@ -165,6 +173,7 @@ public class Node
                 return node;
             }
         }
+
         return null;
     }
 
@@ -185,13 +194,14 @@ public class Node
     /// <returns>The node of the wanted type</returns>
     public TNode? FindFirstChildOfType<TNode>() where TNode : Node
     {
-        foreach (Node node in GetChildren())
+        foreach (Node node in NodeIndex.Children)
         {
             if (node is TNode tNode)
             {
                 return tNode;
             }
         }
+
         return null;
     }
 
@@ -199,13 +209,14 @@ public class Node
     /// <param name="type">The node type being queried for.</param>
     public Node? FindFirstChildOfType(Type type)
     {
-        foreach (Node node in GetChildren())
+        foreach (Node node in NodeIndex.Children)
         {
             if (node.GetType().IsAssignableTo(type))
             {
                 return node;
             }
         }
+
         return null;
     }
 
@@ -236,17 +247,10 @@ public class Node
     /// <returns>List of Children.</returns>
     public List<Node> GetChildren()
     {
-        List<Node> nodes = [];
-        foreach (Node node in GetTree().GetAllNodes())
-        {
-            if (node.Parent == this)
-            {
-                nodes.Add(node);
-            }
-        }
-        return nodes;
+        return NodeIndex.Children;
     }
 
+    // TODO
     /// <summary>
     /// Checks if the node descendes (hierarchally) from <paramref name="other"/>.
     /// </summary>
@@ -255,14 +259,17 @@ public class Node
     public bool IsDescendant(Node other)
     {
         Node? current = Parent;
+
         while (current is not null)
         {
-            if (other == current)
+            if (current.Parent == current)
             {
                 return true;
             }
+
             current = current.Parent;
         }
+
         return false;
     }
 
@@ -308,6 +315,7 @@ public class Node
         return null;
     }
 
+    // TODO
     /// <summary>
     /// Gets all descendants.
     /// </summary>
@@ -315,6 +323,7 @@ public class Node
     public List<Node> GetDescendant()
     {
         List<Node> nodes = [];
+
         foreach (Node node in GetTree().GetAllNodes())
         {
             bool isDesendent = node.IsDescendant(this);
@@ -326,6 +335,7 @@ public class Node
         return nodes;
     }
 
+    // TODO
     /// <summary>
     /// Gets all ancestors.
     /// </summary>
@@ -396,11 +406,12 @@ public class Node
     /// <returns>The disabled node.</returns>
     public static TNode NewDisabled<TNode>(Node? parent = null, string? name = null) where TNode : Node, new()
     {
-        return new()
-        {
-            Parent = parent,
-            Name = name ?? typeof(TNode).Name
-        };
+        TNode newNode = new();
+        newNode._NodeIndex = GetTreeIndexer().AddToIndexer(newNode);
+        newNode.Parent = parent;
+        newNode.Name = name ?? typeof(TNode).Name;
+
+        return newNode;
     }
 
     /// <summary>

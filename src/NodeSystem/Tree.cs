@@ -63,6 +63,8 @@ public sealed class Tree : IDisposable
         return [.. Nodes];
     }
 
+    internal TreeIndexer Indexer;
+
     #region Register
     /// <summary>
     /// Is this node registered.
@@ -182,6 +184,7 @@ public sealed class Tree : IDisposable
 
     internal Tree()
     {
+        Indexer = new(this);
         FixedUpdateTimer = new(UpdateAllNodesFixed, null, 0, FixedUpdateTime);
     }
 }
