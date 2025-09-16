@@ -22,15 +22,15 @@ public sealed class RigidBody : Node3D
     /// The air resistance of the RigidBody.
     /// </summary>
     /// <remarks>
-    /// Multiples the <see cref="Acceleration"/>, between 0 to 1.
+    /// Multiples the <see cref="Velocity"/>, between 0 to 1.
     /// </remarks>
     [Export]
     public float AirResistance { get; set; } = 0.95f;
 
     /// <summary>
-    /// The current acceleration of the RigidBody.
+    /// The current velocity of the RigidBody.
     /// </summary>
-    public Vector3 Acceleration;
+    public Vector3 Velocity;
 
     /// <summary>
     /// The collider the physics body uses.
@@ -44,7 +44,7 @@ public sealed class RigidBody : Node3D
     /// <param name="force">The force</param>
     public void ApplyForce(Vector3 force)
     {
-        Acceleration += force;
+        Velocity += force;
     }
 
     public override void UpdateFixed()
@@ -54,10 +54,10 @@ public sealed class RigidBody : Node3D
         Vector3 fall = -Vector3.Up * (Mass * Gravity),
         final = fall * (float)Tree.FixedUpdateSeconds;
 
-        Acceleration += final;
-        Acceleration *= AirResistance;
+        Velocity += final;
+        Velocity *= AirResistance;
 
-        Ray ray = new(GlobalPosition, Acceleration)
+        Ray ray = new(GlobalPosition, Velocity)
         {
             FilterList = [this],
             FilterType = CollisionFilter.Exclude
@@ -70,6 +70,6 @@ public sealed class RigidBody : Node3D
             return;
         }
 
-        GlobalPosition += Acceleration;
+        GlobalPosition += Velocity;
     }
 }

@@ -812,9 +812,7 @@ public static partial class SceneHandler
 
             foreach (Node node in idToNode.Values)
             {
-                node.Awake();
-                node._ID = tree.RegisterNode(node);
-                node.Start();
+                Node.BeginNode(node);
             }
         }
         catch (Exception ex)

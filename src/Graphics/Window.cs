@@ -24,12 +24,7 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 	{
 		base.OnLoad();
 
-		if (CurrentCamera is null)
-		{
-			return;
-		}
-
-		Color skyColor = CurrentCamera.SkyColor;
+		Color skyColor = CurrentCamera?.SkyColor ?? Color.FromRGB(0, 64, 255);
 		GL.ClearColor(skyColor.R, skyColor.G, skyColor.B, 1.0f);
 
 		GL.Enable(EnableCap.DepthTest);
@@ -58,7 +53,10 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 		Shader.SetInt("texture0", 0);
 		Shader.SetInt("texture1", 1);
 
-		CurrentCamera.AspectRatio = Size.X / (float)Size.Y;
+		if (CurrentCamera is not null)
+		{
+			CurrentCamera.AspectRatio = Size.X / (float)Size.Y;
+		}
 
 		CursorState = CursorState.Grabbed;
 	}

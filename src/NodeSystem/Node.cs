@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using MukiaEngine.NodeSystem;
 
 namespace MukiaEngine;
@@ -17,7 +19,6 @@ public sealed class SaveNodeAttribute(string savedName) : Attribute
 [SaveNode("engine.node")]
 public class Node
 {
-    private Node? _Parent;
     /// <summary>
     /// The hierarchal parent of the Node.
     /// </summary>
@@ -26,28 +27,20 @@ public class Node
     /// </remarks>
     public Node? Parent
     {
-        get => _Parent;
+        get => NodeIndex?.Parent;
         set
         {
-            if (value == this)
-            {
-                throw new TreeException($"Can not parent to self");
-            }
-
-            if (value is not null)
-            {
-                bool isDescendant = IsDescendant(value),
-                isAncestor = IsAncestor(value);
-                if (isDescendant || isAncestor)
-                {
-                    throw new TreeException($"Circular Heiarchry attemped on {this}");
-                }
-            }
+            Tree.ThrowIfInvalidParent(this, value);
 
             OnParent(value);
-            _Parent = value;
+
+            NodeIndex.Parent = value;
+
+            Tree tree = GetTree();
+            tree.UpdateToParent(NodeIndex);
         }
     }
+
     /// <summary>
     /// The un-unique identifier of the Node. 
     /// </summary>
@@ -94,9 +87,15 @@ public class Node
     {
         Tree tree = GetTree();
 
-        var desendents = GetDescendant();
+        if (Parent is not null)
+        {
+            tree.UpdateToParent(NodeIndex);
+        }
+
+        var desendents = GetDescendants();
         foreach (Node node in desendents)
         {
+            node.OnDestroy();
             node.Parent = null;
             tree.UnregisterNode(node);
         }
@@ -134,6 +133,11 @@ public class Node
     #endregion
 
     #region Hierarchary
+
+    public NodeIndex NodeIndex => _NodeIndex;
+    [AllowNull]
+    public NodeIndex _NodeIndex;
+
     /// <summary>
     /// Finds the first child that has the matching <paramref name="name"/> and is an approprate type.
     /// </summary>
@@ -150,6 +154,7 @@ public class Node
                 return tNode;
             }
         }
+
         return null;
     }
 
@@ -165,6 +170,7 @@ public class Node
                 return node;
             }
         }
+
         return null;
     }
 
@@ -192,6 +198,7 @@ public class Node
                 return tNode;
             }
         }
+
         return null;
     }
 
@@ -206,6 +213,7 @@ public class Node
                 return node;
             }
         }
+
         return null;
     }
 
@@ -236,15 +244,7 @@ public class Node
     /// <returns>List of Children.</returns>
     public List<Node> GetChildren()
     {
-        List<Node> nodes = [];
-        foreach (Node node in GetTree().GetAllNodes())
-        {
-            if (node.Parent == this)
-            {
-                nodes.Add(node);
-            }
-        }
-        return nodes;
+        return NodeIndex.Children;
     }
 
     /// <summary>
@@ -255,14 +255,17 @@ public class Node
     public bool IsDescendant(Node other)
     {
         Node? current = Parent;
+
         while (current is not null)
         {
-            if (other == current)
+            if (current == other)
             {
                 return true;
             }
+
             current = current.Parent;
         }
+
         return false;
     }
 
@@ -273,7 +276,7 @@ public class Node
     /// <returns><c>true</c>, if this is the ancestor of <paramref name="other"/>.</returns>
     public bool IsAncestor(Node other)
     {
-        return IsDescendant(other);
+        return other.IsDescendant(this);
     }
 
     /// <summary>
@@ -312,17 +315,30 @@ public class Node
     /// Gets all descendants.
     /// </summary>
     /// <returns>A list of nodes.</returns>
-    public List<Node> GetDescendant()
+    public List<Node> GetDescendants()
     {
-        List<Node> nodes = [];
-        foreach (Node node in GetTree().GetAllNodes())
+        List<Node> nodes = new List<Node>();
+        Stack<Node> stack = new Stack<Node>();
+
+        List<Node> list = GetChildren();
+        for (int i = list.Count - 1; i >= 0; i--)
         {
-            bool isDesendent = node.IsDescendant(this);
-            if (isDesendent)
+            Node child = list[i];
+            stack.Push(child);
+        }
+
+        while (stack.Count > 0)
+        {
+            Node current = stack.Pop();
+            nodes.Add(current);
+
+            var children = current.GetChildren();
+            for (int i = children.Count - 1; i >= 0; i--)
             {
-                nodes.Add(node);
+                stack.Push(children[i]);
             }
         }
+
         return nodes;
     }
 
@@ -383,6 +399,13 @@ public class Node
 
     #region Node Creation
 
+    public static void BeginNode(Node node)
+    {
+        GetTree().RegisterNode(node);
+        node.Awake();
+        node.Start();
+    }
+
     /// <summary>
     /// Creates a new node that is:
     /// <list type="bullet">
@@ -394,13 +417,14 @@ public class Node
     /// <param name="parent">The parent of the new node.</param>
     /// <param name="name">The name of the node.</param>
     /// <returns>The disabled node.</returns>
-    public static TNode NewDisabled<TNode>(Node? parent = null, string? name = null) where TNode : Node, new()
+    public static TNode NewDisabled<TNode>(string? name = null) where TNode : Node, new()
     {
-        return new()
+        TNode newNode = new()
         {
-            Parent = parent,
             Name = name ?? typeof(TNode).Name
         };
+
+        return newNode;
     }
 
     /// <summary>
@@ -410,10 +434,11 @@ public class Node
     /// <inheritdoc cref="NewDisabled{TNode}(Node?, string?)"/>
     public static TNode New<TNode>(Node? parent = null, string? name = null) where TNode : Node, new()
     {
-        TNode node = NewDisabled<TNode>(parent, name);
+        TNode node = NewDisabled<TNode>(name);
 
+        GetTree().RegisterNode(node);
+        node.Parent = parent;
         node.Awake();
-        node._ID = GetTree().RegisterNode(node);
         node.Start();
 
         return node;
