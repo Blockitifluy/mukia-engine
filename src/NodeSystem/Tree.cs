@@ -8,6 +8,27 @@ public class TreeException : Exception
     public TreeException(string message, Exception inner) : base(message, inner) { }
 }
 
+public class NodeIndex(Node? parent, Node self, IEnumerable<Node> children)
+{
+    private Node? _PastParent = null;
+    private Node? _Parent = parent;
+
+    public Node? Parent
+    {
+        get => _Parent;
+        set
+        {
+            _PastParent = _Parent;
+            _Parent = value;
+        }
+    }
+
+    public Node? PastParent => _PastParent;
+
+    public Node Self = self;
+    public List<Node> Children = [.. children];
+}
+
 public sealed class Tree : IDisposable
 {
     private static Tree? CurrentTree;
@@ -63,7 +84,40 @@ public sealed class Tree : IDisposable
         return [.. Nodes];
     }
 
-    internal TreeIndexer Indexer;
+    /// <summary>
+	/// Gets all children in the Node.
+	/// </summary>
+	/// <returns>List of Children.</returns>
+	private List<Node> GetChildren(Node node)
+    {
+        List<Node> nodes = [];
+        foreach (Node other in GetAllNodes())
+        {
+            if (other.Parent == node)
+            {
+                nodes.Add(other);
+            }
+        }
+        return nodes;
+    }
+
+
+    public static void ThrowIfInvalidParent(Node self, Node? parent)
+    {
+        if (parent == self)
+        {
+            throw new TreeException($"Can not parent to self");
+        }
+
+        if (parent is not null)
+        {
+            bool isDescendant = self.IsDescendant(parent);
+            if (isDescendant)
+            {
+                throw new TreeException($"Circular Heiarchry attemped on {self}");
+            }
+        }
+    }
 
     #region Register
     /// <summary>
@@ -76,6 +130,34 @@ public sealed class Tree : IDisposable
         return Nodes.Contains(node);
     }
 
+    private void UpdateToParent(NodeIndex index)
+    {
+        if (index.PastParent is not null)
+        {
+            NodeIndex indexPast = index.PastParent.NodeIndex;
+
+            indexPast.Children.Remove(indexPast.Self);
+        }
+
+        if (index.Parent is not null)
+        {
+            NodeIndex indexParent = index.Parent.NodeIndex;
+
+            bool contains = indexParent.Children.Contains(index.Self);
+            if (!contains)
+            {
+                indexParent.Children.Add(index.Self);
+            }
+        }
+    }
+
+    public void UpdateIndex(NodeIndex index)
+    {
+        index.Children = GetChildren(index.Self);
+
+        UpdateToParent(index);
+    }
+
     /// <summary>
     /// Registers a node.
     /// </summary>
@@ -85,17 +167,29 @@ public sealed class Tree : IDisposable
     /// <param name="node">The node being registed.</param>
     /// <returns>The ID to be assigned to the node. Not set by function.</returns>
     /// <exception cref="TreeException">This node is already registered.</exception>
-    public Guid RegisterNode(Node node)
+    public void RegisterNode(Node node)
     {
         if (IsNodeRegistered(node))
         {
             throw new TreeException("This node is already registered");
         }
+
         Nodes.Add(node);
 
-        Guid id = Guid.NewGuid();
-        return id;
+        List<Node> children = GetChildren(node);
+        NodeIndex index = new(node.Parent, node, children);
+
+        Indexer.Add(node, index);
+        if (node.Parent is not null)
+        {
+            UpdateToParent(node.NodeIndex);
+        }
+
+        node._NodeIndex = index;
+        node._ID = Guid.NewGuid();
     }
+
+    private Dictionary<Node, NodeIndex> Indexer = [];
 
     /// <summary>
     /// Unregisters a node.
@@ -184,7 +278,6 @@ public sealed class Tree : IDisposable
 
     internal Tree()
     {
-        Indexer = new(this);
         FixedUpdateTimer = new(UpdateAllNodesFixed, null, 0, FixedUpdateTime);
     }
 }

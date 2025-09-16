@@ -9,7 +9,7 @@ $[MukiaEngine.NodeSystem.TagSystem W10=]
 	System.String Name="HoveringCamera"
 	System.Boolean Enabled=true
 [engine.rigid-body local-id='1' parent='0']
-	System.Single Mass=0.5
+	System.Single Mass=20
 	System.Single Gravity=9.8
 	System.Single AirResistance=0.95
 	MukiaEngine.Physics.Collider n Collider=4

@@ -29,13 +29,14 @@ public class Node
         get => NodeIndex?.Parent;
         set
         {
-            TreeIndexer.ThrowIfInvalidParent(this, value);
+            Tree.ThrowIfInvalidParent(this, value);
 
             OnParent(value);
+
             NodeIndex.Parent = value;
 
-            TreeIndexer indexer = GetTreeIndexer();
-            indexer.UpdateIndex(NodeIndex);
+            Tree tree = GetTree();
+            tree.UpdateIndex(NodeIndex);
         }
     }
 
@@ -73,11 +74,6 @@ public class Node
         return Tree.GetCurrentTree();
     }
 
-    private static TreeIndexer GetTreeIndexer()
-    {
-        return GetTree().Indexer;
-    }
-
     public override string ToString()
     {
         return $"{GetType().Name} {Name}";
@@ -92,7 +88,7 @@ public class Node
 
         if (Parent is not null)
         {
-            GetTreeIndexer().UpdateIndex(Parent.NodeIndex);
+            tree.UpdateIndex(Parent.NodeIndex);
         }
 
         var desendents = GetDescendant();
@@ -250,7 +246,6 @@ public class Node
         return NodeIndex.Children;
     }
 
-    // TODO
     /// <summary>
     /// Checks if the node descendes (hierarchally) from <paramref name="other"/>.
     /// </summary>
@@ -393,6 +388,13 @@ public class Node
 
     #region Node Creation
 
+    public static void BeginNode(Node node)
+    {
+        GetTree().RegisterNode(node);
+        node.Awake();
+        node.Start();
+    }
+
     /// <summary>
     /// Creates a new node that is:
     /// <list type="bullet">
@@ -404,12 +406,12 @@ public class Node
     /// <param name="parent">The parent of the new node.</param>
     /// <param name="name">The name of the node.</param>
     /// <returns>The disabled node.</returns>
-    public static TNode NewDisabled<TNode>(Node? parent = null, string? name = null) where TNode : Node, new()
+    public static TNode NewDisabled<TNode>(string? name = null) where TNode : Node, new()
     {
-        TNode newNode = new();
-        newNode._NodeIndex = GetTreeIndexer().AddToIndexer(newNode);
-        newNode.Parent = parent;
-        newNode.Name = name ?? typeof(TNode).Name;
+        TNode newNode = new()
+        {
+            Name = name ?? typeof(TNode).Name
+        };
 
         return newNode;
     }
@@ -421,10 +423,11 @@ public class Node
     /// <inheritdoc cref="NewDisabled{TNode}(Node?, string?)"/>
     public static TNode New<TNode>(Node? parent = null, string? name = null) where TNode : Node, new()
     {
-        TNode node = NewDisabled<TNode>(parent, name);
+        TNode node = NewDisabled<TNode>(name);
 
+        GetTree().RegisterNode(node);
+        node.Parent = parent;
         node.Awake();
-        node._ID = GetTree().RegisterNode(node);
         node.Start();
 
         return node;
