@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using MukiaEngine.NodeSystem;
 
@@ -36,7 +37,7 @@ public class Node
             NodeIndex.Parent = value;
 
             Tree tree = GetTree();
-            tree.UpdateIndex(NodeIndex);
+            tree.UpdateToParent(NodeIndex);
         }
     }
 
@@ -88,10 +89,10 @@ public class Node
 
         if (Parent is not null)
         {
-            tree.UpdateIndex(Parent.NodeIndex);
+            tree.UpdateToParent(NodeIndex);
         }
 
-        var desendents = GetDescendant();
+        var desendents = GetDescendants();
         foreach (Node node in desendents)
         {
             node.OnDestroy();
@@ -145,7 +146,7 @@ public class Node
     /// <returns>The node with the matching <paramref name="name"/> and type.</returns>
     public TNode? FindFirstChild<TNode>(string name) where TNode : Node
     {
-        foreach (Node node in NodeIndex.Children)
+        foreach (Node node in GetChildren())
         {
             bool nameMatch = node.Name == name;
             if (nameMatch && node is TNode tNode)
@@ -161,7 +162,7 @@ public class Node
     /// <param name="type"><inheritdoc cref="FindFirstChild{TNode}(string)"/></param>
     public Node? FindFirstChild(string name, Type type)
     {
-        foreach (Node node in NodeIndex.Children)
+        foreach (Node node in GetChildren())
         {
             bool nameMatch = node.Name == name;
             if (nameMatch && node.GetType().IsAssignableTo(type))
@@ -190,7 +191,7 @@ public class Node
     /// <returns>The node of the wanted type</returns>
     public TNode? FindFirstChildOfType<TNode>() where TNode : Node
     {
-        foreach (Node node in NodeIndex.Children)
+        foreach (Node node in GetChildren())
         {
             if (node is TNode tNode)
             {
@@ -205,7 +206,7 @@ public class Node
     /// <param name="type">The node type being queried for.</param>
     public Node? FindFirstChildOfType(Type type)
     {
-        foreach (Node node in NodeIndex.Children)
+        foreach (Node node in GetChildren())
         {
             if (node.GetType().IsAssignableTo(type))
             {
@@ -257,7 +258,7 @@ public class Node
 
         while (current is not null)
         {
-            if (current.Parent == current)
+            if (current == other)
             {
                 return true;
             }
@@ -275,7 +276,7 @@ public class Node
     /// <returns><c>true</c>, if this is the ancestor of <paramref name="other"/>.</returns>
     public bool IsAncestor(Node other)
     {
-        return IsDescendant(other);
+        return other.IsDescendant(this);
     }
 
     /// <summary>
@@ -310,27 +311,37 @@ public class Node
         return null;
     }
 
-    // TODO
     /// <summary>
     /// Gets all descendants.
     /// </summary>
     /// <returns>A list of nodes.</returns>
-    public List<Node> GetDescendant()
+    public List<Node> GetDescendants()
     {
-        List<Node> nodes = [];
+        List<Node> nodes = new List<Node>();
+        Stack<Node> stack = new Stack<Node>();
 
-        foreach (Node node in GetTree().GetAllNodes())
+        List<Node> list = GetChildren();
+        for (int i = list.Count - 1; i >= 0; i--)
         {
-            bool isDesendent = node.IsDescendant(this);
-            if (isDesendent)
+            Node child = list[i];
+            stack.Push(child);
+        }
+
+        while (stack.Count > 0)
+        {
+            Node current = stack.Pop();
+            nodes.Add(current);
+
+            var children = current.GetChildren();
+            for (int i = children.Count - 1; i >= 0; i--)
             {
-                nodes.Add(node);
+                stack.Push(children[i]);
             }
         }
+
         return nodes;
     }
 
-    // TODO
     /// <summary>
     /// Gets all ancestors.
     /// </summary>

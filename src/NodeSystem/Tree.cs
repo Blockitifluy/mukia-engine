@@ -130,7 +130,7 @@ public sealed class Tree : IDisposable
         return Nodes.Contains(node);
     }
 
-    private void UpdateToParent(NodeIndex index)
+    public void UpdateToParent(NodeIndex index)
     {
         if (index.PastParent is not null)
         {
@@ -149,13 +149,6 @@ public sealed class Tree : IDisposable
                 indexParent.Children.Add(index.Self);
             }
         }
-    }
-
-    public void UpdateIndex(NodeIndex index)
-    {
-        index.Children = GetChildren(index.Self);
-
-        UpdateToParent(index);
     }
 
     /// <summary>
