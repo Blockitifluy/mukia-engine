@@ -195,6 +195,12 @@ public sealed class Tree : IDisposable
         {
             throw new TreeException("This node is not registered");
         }
+
+        if (node.Parent is not null)
+        {
+            node.Parent.NodeIndex.Children.Remove(node);
+        }
+
         Nodes.Remove(node);
     }
     #endregion
