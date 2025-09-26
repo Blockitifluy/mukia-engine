@@ -3,6 +3,9 @@ using MukiaEngine.NodeSystem;
 
 namespace MukiaEngine;
 
+/// <summary>
+/// Used to render a scene.
+/// </summary>
 [SaveNode("engine.camera")]
 public sealed class Camera : Node3D
 {

@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace MukiaEngine;
 
+/// <summary>
+/// Thrown when resource couldn't be recieved.
+/// </summary>
 [Serializable]
 public class ResourceException : Exception
 {
@@ -14,7 +17,7 @@ public class ResourceException : Exception
 
 /// <summary>
 /// Allows for a class to be able to be saved into the file system.
-/// Automatically reconsidised in <see cref="NodeSystem.SceneHandler"/>.
+/// Automatically loaded in <see cref="NodeSystem.SceneHandler"/>.
 /// </summary>
 public abstract class Resource
 {

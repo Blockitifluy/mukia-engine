@@ -4,6 +4,9 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace MukiaEngine;
 
+/// <summary>
+/// Handles the game's input.
+/// </summary>
 public static class Input
 {
     public static event EventHandler<KeyboardKeyEventArgs>? OnKeyDown;

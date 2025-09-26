@@ -5,6 +5,12 @@ using MukiaEngine.Physics;
 
 namespace MukiaEngine;
 
+/// <summary>
+/// A hovering camera, used to preview a scene.
+/// </summary>
+/// <remarks>
+/// Doesn't desend from <see cref="MukiaEngine.Camera"/>.
+/// </remarks>
 [SaveNode("engine.hovering-camera")]
 public class HoveringCamera : Node3D
 {

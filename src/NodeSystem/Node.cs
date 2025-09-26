@@ -10,15 +10,21 @@ public sealed class ExportAttribute : Attribute
     public ExportAttribute() { }
 }
 
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
 public sealed class SaveNodeAttribute(string savedName) : Attribute
 {
     public readonly string SavedName = savedName;
 }
 
+/// <summary>
+/// A basic game object.
+/// </summary>
 [SaveNode("engine.node")]
 public class Node
 {
+    internal Node? _PastParent = null;
+    internal Node? _Parent = null;
+    internal List<Node> _Children = [];
+
     /// <summary>
     /// The hierarchal parent of the Node.
     /// </summary>
@@ -27,17 +33,18 @@ public class Node
     /// </remarks>
     public Node? Parent
     {
-        get => NodeIndex?.Parent;
+        get => _Parent;
         set
         {
             Tree.ThrowIfInvalidParent(this, value);
 
             OnParent(value);
 
-            NodeIndex.Parent = value;
+            _PastParent = _Parent;
+            _Parent = value;
 
             Tree tree = GetTree();
-            tree.UpdateToParent(NodeIndex);
+            tree.UpdateToParent(this);
         }
     }
 
@@ -89,7 +96,7 @@ public class Node
 
         if (Parent is not null)
         {
-            tree.UpdateToParent(NodeIndex);
+            tree.UpdateToParent(this);
         }
 
         var desendents = GetDescendants();
@@ -133,10 +140,6 @@ public class Node
     #endregion
 
     #region Hierarchary
-
-    public NodeIndex NodeIndex => _NodeIndex;
-    [AllowNull]
-    public NodeIndex _NodeIndex;
 
     /// <summary>
     /// Finds the first child that has the matching <paramref name="name"/> and is an approprate type.
@@ -244,7 +247,7 @@ public class Node
     /// <returns>List of Children.</returns>
     public List<Node> GetChildren()
     {
-        return NodeIndex.Children;
+        return _Children;
     }
 
     /// <summary>

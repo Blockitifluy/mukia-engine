@@ -8,27 +8,6 @@ public class TreeException : Exception
     public TreeException(string message, Exception inner) : base(message, inner) { }
 }
 
-public class NodeIndex(Node? parent, Node self, IEnumerable<Node> children)
-{
-    private Node? _PastParent = null;
-    private Node? _Parent = parent;
-
-    public Node? Parent
-    {
-        get => _Parent;
-        set
-        {
-            _PastParent = _Parent;
-            _Parent = value;
-        }
-    }
-
-    public Node? PastParent => _PastParent;
-
-    public Node Self = self;
-    public List<Node> Children = [.. children];
-}
-
 public sealed class Tree : IDisposable
 {
     private static Tree? CurrentTree;
@@ -130,23 +109,23 @@ public sealed class Tree : IDisposable
         return Nodes.Contains(node);
     }
 
-    public void UpdateToParent(NodeIndex index)
+    public void UpdateToParent(Node index)
     {
-        if (index.PastParent is not null)
+        if (index._PastParent is not null)
         {
-            NodeIndex indexPast = index.PastParent.NodeIndex;
+            Node indexPast = index._PastParent;
 
-            indexPast.Children.Remove(indexPast.Self);
+            indexPast._Children.Remove(indexPast);
         }
 
         if (index.Parent is not null)
         {
-            NodeIndex indexParent = index.Parent.NodeIndex;
+            Node indexParent = index.Parent;
 
-            bool contains = indexParent.Children.Contains(index.Self);
+            bool contains = indexParent._Children.Contains(index);
             if (!contains)
             {
-                indexParent.Children.Add(index.Self);
+                indexParent._Children.Add(index);
             }
         }
     }
@@ -170,19 +149,15 @@ public sealed class Tree : IDisposable
         Nodes.Add(node);
 
         List<Node> children = GetChildren(node);
-        NodeIndex index = new(node.Parent, node, children);
+        node._Children = children;
 
-        Indexer.Add(node, index);
         if (node.Parent is not null)
         {
-            UpdateToParent(node.NodeIndex);
+            UpdateToParent(node);
         }
 
-        node._NodeIndex = index;
         node._ID = Guid.NewGuid();
     }
-
-    private Dictionary<Node, NodeIndex> Indexer = [];
 
     /// <summary>
     /// Unregisters a node.
@@ -198,7 +173,7 @@ public sealed class Tree : IDisposable
 
         if (node.Parent is not null)
         {
-            node.Parent.NodeIndex.Children.Remove(node);
+            node.Parent._Children.Remove(node);
         }
 
         Nodes.Remove(node);

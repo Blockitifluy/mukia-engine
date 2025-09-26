@@ -30,10 +30,10 @@ public interface ICollisionFilter
     public string CollisionGroup { get; set; }
 }
 
-[SavableSingleton]
 /// <summary>
 /// Contains miscellaneous methods about physics and collision.
 /// </summary>
+[SavableSingleton]
 public static partial class Physics
 {
     /// <inheritdoc cref="InPointInside(Vector3, Vector3, Vector3)"/>

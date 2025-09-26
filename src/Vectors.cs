@@ -9,6 +9,12 @@ namespace MukiaEngine;
 
 // Vector3
 
+/// <summary>
+/// Has a direction and magnitude, can describe a 3D position.
+/// </summary>
+/// <param name="x">X Component</param>
+/// <param name="y">Y Component</param>
+/// <param name="z">Z Component</param>
 public struct Vector3(float x = 0, float y = 0, float z = 0)
 {
     public float X { get; set; } = x;
@@ -239,6 +245,12 @@ public struct Vector3(float x = 0, float y = 0, float z = 0)
     public readonly Vector3 Unit => this == Zero ? Zero : this / Magnitude;
 }
 
+/// <summary>
+/// Has a direction and magnitude, can describe a integised 3D position.
+/// </summary>
+/// <param name="x">X Component</param>
+/// <param name="y">Y Component</param>
+/// <param name="z">Z Component</param>
 public struct Vector3Int(int x = 0, int y = 0, int z = 0)
 {
     public int X { get; set; } = x;
@@ -419,6 +431,11 @@ public struct Vector3Int(int x = 0, int y = 0, int z = 0)
 
 // Vector2
 
+/// <summary>
+/// Has a direction and magnitude, can describe a 2D position.
+/// </summary>
+/// <param name="x">X Component</param>
+/// <param name="y">Y Component</param>
 public struct Vector2(float x = 0, float y = 0)
 {
     public float X { get; set; } = x;
@@ -569,6 +586,11 @@ public struct Vector2(float x = 0, float y = 0)
     public readonly Vector2 Unit => this == Zero ? Zero : this / Magnitude;
 }
 
+/// <summary>
+/// Has a direction and magnitude, can describe a integised 2D position. 
+/// </summary>
+/// <param name="x">X Component</param>
+/// <param name="y">Y Component</param>
 public struct Vector2Int(int x = 0, int y = 0)
 {
     public int X { get; set; } = x;

@@ -1,5 +1,8 @@
 namespace MukiaEngine.Physics;
 
+/// <summary>
+/// Thrown when when there is an error in Collision Group handler.
+/// </summary>
 [Serializable]
 public class CollisionGroupException : Exception
 {
@@ -103,8 +106,8 @@ public static partial class Physics
 
     private static bool CanCollideWith(CollisionGroup left, CollisionGroup right, int i, int j)
     {
-        bool first = GUtility.IsBitSet(left.CollidesWith, j),
-        second = GUtility.IsBitSet(right.CollidesWith, i);
+        bool first = MathT.IsBitSet(left.CollidesWith, j),
+        second = MathT.IsBitSet(right.CollidesWith, i);
 
         if (first != second)
         {

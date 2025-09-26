@@ -213,6 +213,9 @@ public abstract class CollisionShape
     }
 }
 
+/// <summary>
+/// Used for detecting collisions. 
+/// </summary>
 [SaveNode("engine.collider")]
 public sealed class Collider : Node3D
 {

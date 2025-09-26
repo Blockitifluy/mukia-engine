@@ -3,6 +3,9 @@ using MukiaEngine.NodeSystem;
 
 namespace MukiaEngine;
 
+/// <summary>
+/// A 3D structual model.
+/// </summary>
 public sealed class Mesh : Resource, ICloneable
 {
     /// <summary>
