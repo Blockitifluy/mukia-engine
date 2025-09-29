@@ -142,7 +142,7 @@ public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings 
 		var input = KeyboardState;
 		Input.KeyboardState = input;
 
-		if (input.IsKeyDown(Keys.Escape))
+		if (input.IsKeyDown(Keys.Q) && input.IsKeyDown(Keys.LeftControl))
 		{
 			Close();
 		}

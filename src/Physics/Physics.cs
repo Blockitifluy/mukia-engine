@@ -36,6 +36,11 @@ public interface ICollisionFilter
 [SavableSingleton]
 public static partial class Physics
 {
+    /// <summary>
+    /// How big are voxels for collision.
+    /// </summary>
+    public const float CollisionVoxelSize = 0.2f;
+
     /// <inheritdoc cref="InPointInside(Vector3, Vector3, Vector3)"/>
     public static bool InPointInside(Vector3Int point, Vector3Int min, Vector3Int max)
     {

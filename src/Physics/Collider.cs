@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using MukiaEngine.NodeSystem;
 
@@ -23,6 +24,8 @@ public struct IntersectionFilter : ICollisionFilter
 /// </summary>
 public abstract class CollisionShape
 {
+    // Used because the C# bool takes 4 byte
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3, ArraySubType = UnmanagedType.I1)]
     /// <summary>
     /// All of the voxels of the Collision Shape.
     /// </summary>

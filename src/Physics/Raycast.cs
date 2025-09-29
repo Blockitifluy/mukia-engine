@@ -50,11 +50,6 @@ public struct Ray(Vector3 origin, Vector3 dir) : ICollisionFilter
 
 public static partial class Physics
 {
-    /// <summary>
-    /// How big are voxels for collidision.
-    /// </summary>
-    public const float CollisionVoxelSize = 0.2f;
-
     private static bool IsIn180Sight(Vector3 origin, Vector3 direction, Collider collider)
     {
         Vector3[] corners = GetCornersOfCollider(collider);
