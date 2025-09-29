@@ -9,6 +9,7 @@ using MukiaEngine.NodeSystem;
 
 namespace MukiaEngine.Graphics;
 // TODO - Render nothing when no camera
+// TODO - Render UI as quads
 public class Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : GameWindow(gameWindowSettings, nativeWindowSettings)
 {
 	private int ElementBufferObject;
