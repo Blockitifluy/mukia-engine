@@ -379,7 +379,7 @@ public static partial class SceneHandler
 
     private static void GetValidNodesForSaving(List<Node> nodes, List<ExportNode> b, Dictionary<Node, uint> nodeToLocalID)
     {
-        uint i = 0;
+        uint i = 1;
         foreach (Node node in nodes)
         {
             var saveNode = node.GetType().GetCustomAttribute<SaveNodeAttribute>(false);

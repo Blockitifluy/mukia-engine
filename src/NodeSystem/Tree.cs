@@ -80,7 +80,6 @@ public sealed class Tree : IDisposable
         return nodes;
     }
 
-
     public static void ThrowIfInvalidParent(Node self, Node? parent)
     {
         if (parent == self)

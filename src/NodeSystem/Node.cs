@@ -231,13 +231,16 @@ public class Node
             return false;
         }
 
-        foreach (Node node in GetAncestors())
+        Node current = this;
+        while (current.Parent is not null)
         {
-            if (!node.Archivable)
+            current = current.Parent;
+            if (!current.Archivable)
             {
                 return false;
             }
         }
+
         return true;
     }
 
