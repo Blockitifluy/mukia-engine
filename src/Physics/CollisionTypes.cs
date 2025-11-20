@@ -56,7 +56,10 @@ public sealed class SphereCollision : CollisionShape
         Vector3Int voxelSize = VoxelsPerDimension,
         center = voxelSize / 2;
 
+        int volume = voxelSize.X * voxelSize.Y * voxelSize.Z;
+
         int i = 0;
+        PrepareCollisionVoxels(volume);
         for (int x = 0; x < voxelSize.X; x++)
         {
             for (int y = 0; y < voxelSize.Y; y++)
