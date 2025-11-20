@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using MukiaEngine.NodeSystem;
+using OpenTK.Graphics.OpenGL;
+using Collision3DBitmap = ulong;
 
 namespace MukiaEngine.Physics;
 
@@ -24,15 +26,13 @@ public struct IntersectionFilter : ICollisionFilter
 /// </summary>
 public abstract class CollisionShape
 {
-    // Used because the C# bool takes 4 byte
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3, ArraySubType = UnmanagedType.I1)]
     /// <summary>
     /// All of the voxels of the Collision Shape.
     /// </summary>
-    public bool[,,] CollisonVoxels = new bool[0, 0, 0];
+    public Collision3DBitmap[] CollisonVoxels = new Collision3DBitmap[0];
 
     /// <summary>
-    /// The bounds that the CollisionShape bounds to.
+    /// The bounds that the CollisionShape bound to.
     /// </summary>
     [JsonIgnore]
     public abstract Vector3 Bounds { get; }
@@ -50,10 +50,74 @@ public abstract class CollisionShape
     /// </summary>
     public Vector3 Scale = Vector3.One;
 
+    private Vector3Int _VoxelsPerDimension;
+
+    /// <summary>
+    /// Gets voxels per dimension of the CollisionShape.
+    /// </summary>
+    /// <returns>Voxels per dimension</returns>
+    public Vector3Int VoxelsPerDimension => _VoxelsPerDimension;
+
     /// <summary>
     /// Calculates all of the voxels in <see cref="CollisionVoxels"/>.
     /// </summary>
-    public abstract void CalculateCollisionVoxels();
+    public virtual void CalculateCollisionVoxels()
+    {
+        _VoxelsPerDimension = (Vector3Int)(Bounds * Scale / Physics.CollisionVoxelSize);
+    }
+
+    const int Collision3DBitmapSize = sizeof(Collision3DBitmap) * 8;
+
+    protected void PrepareCollisionVoxels(int voxelAmount)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(voxelAmount, 0, nameof(voxelAmount));
+
+        int bitmapAmount = (int)MathF.Ceiling((float)voxelAmount / Collision3DBitmapSize);
+
+        CollisonVoxels = new Collision3DBitmap[bitmapAmount];
+    }
+
+    public int GetVoxelBitmapIndex(int i, out int offset)
+    {
+        int length = CollisonVoxels.Length;
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(i, 0, nameof(i));
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(i, length * Collision3DBitmapSize, nameof(i));
+
+        offset = i % Collision3DBitmapSize;
+        return i / Collision3DBitmapSize;
+    }
+
+    public int XYZToIndex(int x, int y, int z)
+    {
+        return (y * VoxelsPerDimension.X * VoxelsPerDimension.Z) + (z * VoxelsPerDimension.X) + x;
+    }
+
+    public bool GetVoxelStatus(int i)
+    {
+        int bitmapIndex = GetVoxelBitmapIndex(i, out int bitOffset);
+
+        Collision3DBitmap map = CollisonVoxels[bitmapIndex];
+        bool status = MathT.IsBitSet(map, bitOffset);
+
+        return status;
+    }
+
+    public void ClearVoxel(int i)
+    {
+        int bitmapIndex = GetVoxelBitmapIndex(i, out int bitOffset);
+
+        ref Collision3DBitmap map = ref CollisonVoxels[bitmapIndex];
+        map &= ~(1UL << bitOffset);
+    }
+
+    public void SetVoxel(int i)
+    {
+        int bitmapIndex = GetVoxelBitmapIndex(i, out int bitOffset);
+
+        ref Collision3DBitmap map = ref CollisonVoxels[bitmapIndex];
+        map |= 1UL << bitOffset;
+    }
 
     public delegate bool ForVoxel(Vector3Int pos, bool voxel);
 
@@ -63,7 +127,7 @@ public abstract class CollisionShape
     /// <param name="func">Delegate to be fired every voxel.</param>
     public void ForEachVoxel(ForVoxel func)
     {
-        Vector3Int voxelSize = GetVoxelsPerDimension();
+        Vector3Int voxelSize = VoxelsPerDimension;
         bool stop = false;
 
         for (int x = 0; x < voxelSize.X; x++)
@@ -74,7 +138,9 @@ public abstract class CollisionShape
                 {
                     Vector3Int pos = new(x, y, z);
 
-                    stop = func(pos, CollisonVoxels[x, y, z]);
+                    int i = XYZToIndex(x, y, z);
+
+                    stop = func(pos, GetVoxelStatus(i));
                 }
 
                 if (stop)
@@ -88,15 +154,6 @@ public abstract class CollisionShape
                 break;
             }
         }
-    }
-
-    /// <summary>
-    /// Gets voxels per dimension of the CollisionShape.
-    /// </summary>
-    /// <returns>Voxels per dimension</returns>
-    public Vector3Int GetVoxelsPerDimension()
-    {
-        return (Vector3Int)(Bounds * Scale / Physics.CollisionVoxelSize);
     }
 
     /// <summary>
@@ -162,13 +219,13 @@ public abstract class CollisionShape
 
             Vector3Int localPos = pos - pos0;
 
-            bool inside = Physics.InPointInside(localPos, second.GetVoxelsPerDimension());
+            bool inside = Physics.InPointInside(localPos, second.VoxelsPerDimension);
             if (!inside)
             {
                 return false;
             }
 
-            bool other = second.CollisonVoxels[localPos.X, localPos.Y, localPos.Z];
+            bool other = second.GetVoxelStatus(second.XYZToIndex(localPos.X, localPos.Y, localPos.Z));
 
             if (other)
             {
@@ -210,7 +267,7 @@ public abstract class CollisionShape
         Vector3 posRot = point - Position;
 
         Vector3Int intStep = (Vector3Int)(posRot * Physics.CollisionVoxelSize);
-        bool colliding = CollisonVoxels[intStep.X, intStep.Y, intStep.Z];
+        bool colliding = GetVoxelStatus(XYZToIndex(intStep.X, intStep.Y, intStep.Z));
 
         return colliding;
     }

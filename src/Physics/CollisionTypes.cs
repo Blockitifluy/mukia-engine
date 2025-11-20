@@ -20,22 +20,16 @@ public sealed class CubeCollision : CollisionShape
 
     public override void CalculateCollisionVoxels()
     {
-        Vector3Int voxelsSize = GetVoxelsPerDimension();
+        base.CalculateCollisionVoxels();
 
-        bool[,,] voxels = new bool[voxelsSize.X, voxelsSize.Y, voxelsSize.Z];
+        Vector3Int voxelsSize = VoxelsPerDimension;
+        int volume = voxelsSize.X * voxelsSize.Y * voxelsSize.Z;
 
-        for (int x = 0; x < voxelsSize.X; x++)
+        PrepareCollisionVoxels(volume);
+        for (int i = 0; i < volume; i++)
         {
-            for (int y = 0; y < voxelsSize.Y; y++)
-            {
-                for (int z = 0; z < voxelsSize.Z; z++)
-                {
-                    voxels[x, y, z] = true;
-                }
-            }
+            SetVoxel(i);
         }
-
-        CollisonVoxels = voxels;
     }
 }
 
@@ -57,11 +51,12 @@ public sealed class SphereCollision : CollisionShape
 
     public override void CalculateCollisionVoxels()
     {
-        Vector3Int voxelSize = GetVoxelsPerDimension(),
+        base.CalculateCollisionVoxels();
+
+        Vector3Int voxelSize = VoxelsPerDimension,
         center = voxelSize / 2;
 
-        bool[,,] voxels = new bool[voxelSize.X, voxelSize.Y, voxelSize.Z];
-
+        int i = 0;
         for (int x = 0; x < voxelSize.X; x++)
         {
             for (int y = 0; y < voxelSize.Y; y++)
@@ -76,11 +71,14 @@ public sealed class SphereCollision : CollisionShape
                     inY = dist <= center.Y,
                     inZ = dist <= center.Z;
 
-                    voxels[x, y, z] = inX && inY && inZ;
+                    if (inX && inY && inZ)
+                    {
+                        SetVoxel(i);
+                    }
+
+                    i++;
                 }
             }
         }
-
-        CollisonVoxels = voxels;
     }
 }
