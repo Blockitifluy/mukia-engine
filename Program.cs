@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using CommandLine;
 using MukiaEngine;
 using MukiaEngine.Graphics;
@@ -71,8 +72,12 @@ public static class Program
 
     }
 
+    [DllImport("obj/render.dll")]
+    public static extern int CTest();
+
     public static void Main(string[] args)
     {
+        CTest();
 #if !DEBUG
         Parser.Default.ParseArguments<CLIOptions>(args)
         .WithParsed<CLIOptions>(o =>
