@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using CommandLine;
 using MukiaEngine;
 using MukiaEngine.Graphics;
 using MukiaEngine.NodeSystem;
@@ -9,16 +8,6 @@ using OpenTK.Windowing.Desktop;
 
 public static class Program
 {
-    private class CLIOptions
-    {
-        [Option('v', "verbose", Required = false, HelpText = "Set output to verbose messages")]
-        public bool Verbose { get; set; }
-        [Option('s', "save-on-quit", Required = false, HelpText = "Save the scene when quiting")]
-        public string? SaveOnQuit { get; set; }
-        [Option("no-singletons", Required = false, HelpText = "Load and save no singletons")]
-        public bool NoSingletons { get; set; }
-    }
-
     public static Window? GameWindow { get; set; }
 
     public static void RunWindow(bool verbose = false)
@@ -43,9 +32,9 @@ public static class Program
     }
 
     public const string ProgramHelp = """
-	demo - Loads and save the demo level
-	load [path to scene] - Loads the scene from the file
-	""";
+    demo - Loads and save the demo level
+    load [path to scene] - Loads the scene from the file
+    """;
 
     public static void CreateTestScene()
     {
@@ -79,56 +68,88 @@ public static class Program
     {
         CTest();
 #if !DEBUG
-        Parser.Default.ParseArguments<CLIOptions>(args)
-        .WithParsed<CLIOptions>(o =>
+        bool verbose = false,
+        noSingletons = false;
+
+        string? saveOnQuitPath = null;
+
+        for (int i = 0; i < args.Length; i++)
         {
-            string? cmd = args.ElementAtOrDefault(0);
-            if (cmd is null)
+            string arg = args[i];
+            switch (arg)
             {
-                Console.WriteLine(ProgramHelp);
-                return;
+                case "-v":
+                case "--verbose":
+                    verbose = true;
+                    break;
+                case "-s":
+                case "--save-on-quit":
+                    {
+                        if (i == args.Length - 1)
+                        {
+                            throw new ArgumentException("--save-on-quit arguement has no path");
+                        }
+                        saveOnQuitPath = args[i + 1];
+                        break;
+                    }
+                case "--no-singletons":
+                    noSingletons = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        string? cmd = args.ElementAtOrDefault(0);
+        if (cmd is null)
+        {
+            Console.WriteLine(ProgramHelp);
+            return;
+        }
+
+        using Tree tree = Tree.InitaliseTree(true);
+
+        if (cmd == "demo")
+        {
+            CreateTestScene();
+        }
+        else if (cmd == "load")
+        {
+            string path = args[1];
+
+            SceneLoadingFlags flags = SceneLoadingFlags.None;
+            if (verbose)
+            {
+                flags |= SceneLoadingFlags.Verbose;
+            }
+            if (noSingletons)
+            {
+                flags |= SceneLoadingFlags.NoSingletons;
             }
 
-            using Tree tree = Tree.InitaliseTree(true);
+            SceneHandler.LoadScene(tree, path, flags);
+        }
+        else
+        {
+            throw new ArgumentException($"Invalid command: {cmd}");
+        }
 
-            if (cmd == "demo")
+        RunWindow(verbose);
+
+        if (saveOnQuitPath is not null)
+        {
+            SceneSavingFlags flags = SceneSavingFlags.None;
+            if (verbose)
             {
-                CreateTestScene();
+                flags |= SceneSavingFlags.Verbose;
             }
-            else if (cmd == "load")
+            if (noSingletons)
             {
-                string path = args[1];
-
-                SceneLoadingFlags flags = SceneLoadingFlags.None;
-                if (o.Verbose)
-                {
-                    flags |= SceneLoadingFlags.Verbose;
-                }
-                if (o.NoSingletons)
-                {
-                    flags |= SceneLoadingFlags.NoSingletons;
-                }
-
-                SceneHandler.LoadScene(tree, path, flags);
+                flags |= SceneSavingFlags.NoSingletons;
             }
 
-            RunWindow(o.Verbose);
-
-            if (o.SaveOnQuit is not null)
-            {
-                SceneSavingFlags flags = SceneSavingFlags.None;
-                if (o.Verbose)
-                {
-                    flags |= SceneSavingFlags.Verbose;
-                }
-                if (o.NoSingletons)
-                {
-                    flags |= SceneSavingFlags.NoSingletons;
-                }
-
-                SceneHandler.SaveScene(Tree.GetCurrentTree(), o.SaveOnQuit, flags);
-            }
-        });
+            SceneHandler.SaveScene(Tree.GetCurrentTree(), saveOnQuitPath, flags);
+        }
 #else
         using Tree tree = Tree.InitaliseTree(true);
         CreateTestScene();
