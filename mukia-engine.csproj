@@ -68,7 +68,6 @@
 
   <ItemGroup>
     <Compile Remove="tools/install-assets/Entry.cs" />
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="nulastudio.NetBeauty" Version="2.1.5" />
     <PackageReference Include="OpenTK" Version="4.9.4" />
     <PackageReference Include="StbImageSharp" Version="2.30.15" />
